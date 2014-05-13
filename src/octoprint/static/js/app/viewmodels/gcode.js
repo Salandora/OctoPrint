@@ -50,6 +50,7 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
 
     self.reader_sortLayers = ko.observable(true);
     self.reader_hideEmptyLayers = ko.observable(true);
+    self.worker_ignoreMovesInSize = ko.observable(true);
 
     self.synchronizeOptions = function(additionalRendererOptions, additionalReaderOptions) {
         var renderer = {
@@ -66,17 +67,27 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
             _.extend(renderer, additionalRendererOptions);
         }
 
+        var worker = {
+        	purgeEmptyLayers: self.reader_hideEmptyLayers(),
+        	ignoreMovesInSize: self.worker_ignoreMovesInSize()
+        };
+
         var reader = {
             sortLayers: self.reader_sortLayers(),
-            purgeEmptyLayers: self.reader_hideEmptyLayers()
         };
+        _.extend(reader, worker);
         if (additionalReaderOptions) {
             _.extend(reader, additionalReaderOptions);
         }
 
+        var worker = {
+        	ignoreMovesInSize: self.worker_ignoreMovesInSize()
+        };
+
         GCODE.ui.updateOptions({
             renderer: renderer,
-            reader: reader
+            reader: reader,
+            worker: worker
         });
     };
 
@@ -92,6 +103,7 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
     self.renderer_showPrevious.subscribe(self.synchronizeOptions);
     self.reader_sortLayers.subscribe(self.synchronizeOptions);
     self.reader_hideEmptyLayers.subscribe(self.synchronizeOptions);
+    self.worker_ignoreMovesInSize.subscribe(self.synchronizeOptions);
 
     // subscribe to relevant printer settings...
     self.settings.printer_extruderOffsets.subscribe(function() {
@@ -139,7 +151,7 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
                 onModelLoaded: self._onModelLoaded,
                 onLayerSelected: self._onLayerSelected,
                 bed: self.settings.printer_bedDimensions(),
-                toolOffsets: self.settings.printer_extruderOffsets()
+                toolOffsets: self.settings.printer_extruderOffsets(),
             });
             self.synchronizeOptions();
             self.enabled = true;
@@ -319,7 +331,7 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
             self.ui_modelInfo(output.join("<br>"));
 
             self.layerSlider.slider("enable");
-            self.layerSlider.slider("setMax", model.layersPrinted - 1);
+            self.layerSlider.slider("setMax", model.layersTotal - 1);
             self.layerSlider.slider("setValue", 0);
         }
     };
@@ -336,13 +348,16 @@ function GcodeViewModel(loginStateViewModel, settingsViewModel) {
             output.push("Layer number: " + (layer.number + 1));
             output.push("Layer height (mm): " + layer.height);
             output.push("GCODE commands in layer: " + layer.commands);
-            if (layer.filament.length == 1) {
-                output.push("Filament used by layer: " + layer.filament[0].toFixed(2) + "mm");
-            } else {
-                for (var i = 0; i < layer.filament.length; i++) {
-                    output.push("Filament used by layer (Tool " + i + "): " + layer.filament[i].toFixed(2) + "mm");
-                }
-            }
+            if (layer.filament)
+			{
+				if (layer.filament.length == 1) {
+					output.push("Filament used by layer: " + layer.filament[0].toFixed(2) + "mm");
+				} else {
+					for (var i = 0; i < layer.filament.length; i++) {
+						output.push("Filament used by layer (Tool " + i + "): " + layer.filament[i].toFixed(2) + "mm");
+					}
+				}
+			}
             output.push("Print time for layer: " + formatDuration(layer.printTime));
 
             self.ui_layerInfo(output.join("<br>"));

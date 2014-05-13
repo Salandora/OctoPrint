@@ -482,6 +482,18 @@
                                             </label>
                                         </p>
 
+										<p>
+                                            <label class="checkbox">
+                                                <input type="checkbox" data-bind="checked: reader_sortLayers">Sort Layers
+                                            </label>
+                                            <label class="checkbox">
+                                                <input type="checkbox" data-bind="checked: reader_hideEmptyLayers">Hide empty Layers
+                                            </label>
+                                            <label class="checkbox">
+                                                <input type="checkbox" data-bind="checked: worker_ignoreMovesInSize">Ignore moves in Size
+                                            </label>
+										</p>
+
                                         <p>
                                             <button class="btn btn-block" data-bind="click: reload, enable: enableReload">Reload</button>
                                         </p>
@@ -664,5 +676,6 @@
         <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/ui.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/gCodeReader.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/renderer.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/Worker.js') }}"></script>
     </body>
 </html>

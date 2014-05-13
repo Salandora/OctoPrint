@@ -180,6 +180,11 @@ GCODE.ui = (function(){
 
         updateOptions: function(options) {
             setOptions(options.ui);
+
+			this.worker.postMessage({
+            	"cmd": "setOption",
+            	"msg": options.worker
+			});
             GCODE.gCodeReader.setOption(options.reader);
             GCODE.renderer.setOption(options.renderer);
         },

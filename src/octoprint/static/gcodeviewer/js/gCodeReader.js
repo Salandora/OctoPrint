@@ -8,6 +8,7 @@ GCODE.gCodeReader = (function(){
 // ***** PRIVATE ******
     var gcode, lines;
     var z_heights = {};
+    var origModel = [];
     var model = [];
     var max = {x: undefined, y: undefined, z: undefined};
     var min = {x: undefined, y: undefined, z: undefined};
@@ -22,6 +23,7 @@ GCODE.gCodeReader = (function(){
         sortLayers: false,
         purgeEmptyLayers: true,
         analyzeModel: false,
+    	ignoreMovesInSize: true,
         toolOffsets: [
             {x: 0, y: 0}
         ]
@@ -69,8 +71,8 @@ GCODE.gCodeReader = (function(){
         percentageTree = undefined;
 
         for (var l = 0; l < model.length; l++) {
-            for (var i = 0; i < model[l].length; i++) {
-                var percentage = model[l][i].percentage;
+        	for (var i = 0; i < model[l].length; i++) {
+        		var percentage = model[l][i].percentage;
                 var value = {layer: l, cmd: i};
                 if (!percentageTree) {
                     percentageTree = new AVLTree({key: percentage, value: value}, "key");
@@ -95,25 +97,25 @@ GCODE.gCodeReader = (function(){
     };
 
     var purgeLayers = function(){
-        if(!model) return;
-
+    	if(!model) return;
+		
         var purge;
         for(var i = 0; i < model.length; i++){
-            purge = true;
+        	purge = true;
 
-            if (typeof(model[i]) !== "undefined") {
-                for (var j = 0; j < model[i].length; j++) {
-                    if(model[i][j].extrude) {
+        	if (typeof(model[i]) !== "undefined") {
+        		for (var j = 0; j < model[i].length; j++) {
+        			if(model[i][j].extrude) {
                         purge = false;
                         break;
                     }
                 }
             }
 
-            if (purge) {
-                model.splice(i, 1);
-                i--;
-            }
+        	if (purge) {
+        		model.splice(i, 1);
+        		i--;
+        	}
         }
     };
 
@@ -146,18 +148,28 @@ GCODE.gCodeReader = (function(){
         },
 
         setOption: function(options){
-            var dirty = false;
+        	var dirty = false;
+        	var purgeEmptyLayersChanged = options["purgeEmptyLayers"] !== undefined && (gCodeOptions["purgeEmptyLayers"] != options["purgeEmptyLayers"]);
+        	var ignoreMovesInSizeChanged = options["ignoreMovesInSize"] !== undefined && (gCodeOptions["ignoreMovesInSize"] != options["ignoreMovesInSize"]);
+
             for(var opt in options){
                 if (options[opt] === undefined) continue;
                 dirty = dirty || (gCodeOptions[opt] != options[opt]);
                 gCodeOptions[opt] = options[opt];
             }
             if (dirty) {
-                if (model && model.length > 0) this.passDataToRenderer();
+            	if (ignoreMovesInSizeChanged || purgeEmptyLayersChanged)
+            		GCODE.ui.worker.postMessage({
+            			"cmd": "analyzeModel",
+            			"msg": { model: origModel }
+            		});
+				else if (origModel && origModel.length > 0) this.passDataToRenderer();
             }
         },
 
-        passDataToRenderer: function(){
+        passDataToRenderer: function() {
+        	model = origModel;
+
             if (gCodeOptions["sortLayers"]) sortLayers();
             if (gCodeOptions["purgeEmptyLayers"]) purgeLayers();
             prepareLinesIndex();
@@ -165,13 +177,13 @@ GCODE.gCodeReader = (function(){
         },
 
         processLayerFromWorker: function(msg){
-            model[msg.layerNum] = msg.cmds;
+            origModel[msg.layerNum] = msg.cmds;
             z_heights[msg.zHeightObject.zValue] = msg.zHeightObject.layer;
         },
 
         processMultiLayerFromWorker: function(msg){
             for(var i=0;i<msg.layerNum.length;i++){
-                model[msg.layerNum[i]] = msg.model[msg.layerNum[i]];
+            	origModel[msg.layerNum[i]] = msg.model[msg.layerNum[i]];
                 z_heights[msg.zHeightObject.zValue[i]] = msg.layerNum[i];
             }
         },
@@ -211,8 +223,8 @@ GCODE.gCodeReader = (function(){
 
         getGCodeLines: function(layer, fromSegments, toSegments){
             var result = {
-                first: model[layer][fromSegments].gcodeLine,
-                last: model[layer][toSegments].gcodeLine
+            	first: origModel[layer][fromSegments].gcodeLine,
+            	last: origModel[layer][toSegments].gcodeLine
             };
             return result;
         },

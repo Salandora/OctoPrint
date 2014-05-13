@@ -21,7 +21,11 @@
     var layerHeight = 0;
     var layerCnt = 0;
     var speeds = {extrude: [], retract: [], move: []};
-    var speedsByLayer = {extrude: {}, retract: {}, move: {}};
+    var speedsByLayer = { extrude: {}, retract: {}, move: {} };
+    var analyzeOptions = {
+		purgeEmptyLayers: true,
+    	ignoreMovesInSize: true,
+    };
 
     var sendLayerToParent = function(layerNum, z, progress){
         self.postMessage({
@@ -91,7 +95,7 @@
     var purgeLayers = function () {
         var purge = true;
         for (var i = 0; i < model.length; i++) {
-            purge = true;
+        	purge = analyzeOptions["purgeEmptyLayers"];
             if (!model[i]) {
                 purge = true;
             } else {
@@ -125,7 +129,7 @@
                 if (typeof(cmds[j].x) !== 'undefined'
                         && typeof(cmds[j].prevX) !== 'undefined'
                         && typeof(cmds[j].extrude) !== 'undefined'
-                        && cmds[j].extrude
+                        && (cmds[j].extrude || !analyzeOptions["ignoreMovesInSize"])
                         && !isNaN(cmds[j].x)) {
                     var x = cmds[j].x;
                     max.x = max.x !== undefined ? Math.max(max.x, x) : x;
@@ -137,7 +141,7 @@
                 if (typeof(cmds[j].y) !== 'undefined'
                         && typeof(cmds[j].prevY) !== 'undefined'
                         && typeof(cmds[j].extrude) !== 'undefined'
-                        && cmds[j].extrude
+                        && (cmds[j].extrude || !analyzeOptions["ignoreMovesInSize"])
                         && !isNaN(cmds[j].y)){
                     var y = cmds[j].y;
 
@@ -149,7 +153,7 @@
 
                 if (typeof(cmds[j].prevZ) !== 'undefined'
                         && typeof(cmds[j].extrude) !== 'undefined'
-                        && cmds[j].extrude
+                        && (cmds[j].extrude || !analyzeOptions["ignoreMovesInSize"])
                         && !isNaN(cmds[j].prevZ)) {
                     var z = cmds[j].prevZ;
                     max.z = max.z !== undefined ? Math.max(max.z, z) : z;
@@ -523,7 +527,10 @@
         });
     };
 
-    var runAnalyze = function(message){
+    var runAnalyze = function (message) {
+    	if (message && message.model)
+    		model = message.model;
+
         analyzeModel();
         model = [];
         z_heights = [];
@@ -544,10 +551,13 @@
         speedsByLayer = {extrude: {}, retract: {}, move: {}};
     };
 
-    var setOption = function(options){
-        for(var opt in options){
-            gCodeOptions[opt] = options[opt];
-        }
+    var setOption = function (options) {
+    	var dirty = false;
+    	for (var opt in options) {
+    		if (options[opt] === undefined) continue;
+    		dirty = dirty || (analyzeOptions[opt] != options[opt]);
+    		analyzeOptions[opt] = options[opt];
+    	}
     };
 
 onmessage = function (e){
