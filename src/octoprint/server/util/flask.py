@@ -206,10 +206,11 @@ def fix_webassets_filtertool():
 #~~ passive login helper
 
 def passive_login():
-	if octoprint.server.userManager is not None:
-		user = octoprint.server.userManager.login_user(flask.ext.login.current_user)
-	else:
-		user = flask.ext.login.current_user
+	user = flask.ext.login.current_user
+	if octoprint.server.userManager is not None and not user.is_anonymous():
+		user = octoprint.server.userManager.findUser(user.get_name())
+		if user is not None:
+			user = octoprint.server.userManager.login_user(user)
 
 	if user is not None and not user.is_anonymous():
 		flask.g.user = user
