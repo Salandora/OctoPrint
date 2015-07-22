@@ -68,7 +68,7 @@ $(function() {
             }
         });
 
-        self.activeFilters = ko.observableArray([]);
+        self.activeFilters = ko.observableArray([]).extend({persist: 'terminal.activeFilters'});
         self.activeFilters.subscribe(function(e) {
             self.updateFilterRegex();
         });

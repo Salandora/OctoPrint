@@ -86,6 +86,7 @@ class Events(object):
 
 	# Settings
 	SETTINGS_UPDATED = "SettingsUpdated"
+	USER_SETTINGS_UPDATED = "UserSettingsChanged"
 
 
 def eventManager():

@@ -56,6 +56,7 @@ $(function() {
 
         // the view model map is our basic look up table for dependencies that may be injected into other view models
         var viewModelMap = {};
+        var persistentObjectHelper = new PersistentObjectHelper();
 
         // Fix Function#name on browsers that do not support it (IE):
         // see: http://stackoverflow.com/questions/6903762/function-name-not-supported-in-ie 
@@ -66,6 +67,42 @@ $(function() {
                 }
             });
         }
+
+        //~~ Custom knockout.js extenders
+        // It's important that they get defined before the creation of the viewModels otherwise the extenders would have no effect
+
+        ko.extenders.persist = function(target, options) {
+            if (!Modernizr.localstorage)
+                return target;
+
+            var key = "";
+            var localOnly = false;
+            if (_.isObject(options)) {
+                if (options.hasOwnProperty("key")) {
+                    key = ko.utils.unwrapObservable(options["key"]);
+                }
+                if (options.hasOwnProperty("localOnly")) {
+                    localOnly = ko.utils.unwrapObservable(options["localOnly"]);
+                }
+            }
+            else if (_.isString(options))
+                key = options;
+
+            if (key) {
+                persistentObjectHelper.addObject(key, target);
+
+                var localValue = persistentObjectHelper.getItem(key);
+                if (localValue != undefined) {
+                    target(localValue);
+                }
+
+                target.subscribe(function (newValue) {
+                    persistentObjectHelper.setItem(key, newValue, localOnly);
+                });
+            }
+
+            return target;
+        };
 
         // helper to create a view model instance with injected constructor parameters from the view model map
         var _createViewModelInstance = function(viewModel, viewModelMap){
@@ -189,6 +226,7 @@ $(function() {
         log.info("... dependency resolution done");
 
         var dataUpdater = new DataUpdater(allViewModels);
+        persistentObjectHelper.setUserSettingsViewModel(allViewModels["usersettingsViewModel"]);
 
         //~~ Custom knockout.js bindings
 

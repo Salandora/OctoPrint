@@ -128,6 +128,10 @@ $(function() {
             self.requestData();
         };
 
+        self.onEventUserSettingsChanged = function() {
+            self.reloadUser();
+        };
+
         self.onStartupComplete = function() {
             self.requestData();
         };

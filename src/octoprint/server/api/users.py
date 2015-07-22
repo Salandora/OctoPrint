@@ -11,6 +11,7 @@ from flask.ext.login import current_user
 
 import octoprint.users as users
 
+from octoprint.events import eventManager, Events
 from octoprint.server import SUCCESS, admin_permission, userManager
 from octoprint.server.api import api
 from octoprint.server.util.flask import restricted_access
@@ -178,6 +179,7 @@ def changeSettingsForUser(username):
 
 	try:
 		userManager.changeUserSettings(username, data)
+		eventManager().fire(Events.USER_SETTINGS_UPDATED)
 		return jsonify(SUCCESS)
 	except users.UnknownUser:
 		return make_response("Unknown user: %s" % username, 404)

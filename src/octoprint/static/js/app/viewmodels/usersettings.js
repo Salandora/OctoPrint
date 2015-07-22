@@ -17,6 +17,7 @@ $(function() {
         self.access_repeatedPassword = ko.observable(undefined);
         self.access_apikey = ko.observable(undefined);
         self.interface_language = ko.observable(undefined);
+        self.sync_settings = ko.observable(false).extend({ persist: { key: "syncSettings", localOnly: true }});
 
         self.currentUser = ko.observable(undefined);
         self.currentUser.subscribe(function(newUser) {
@@ -37,14 +38,13 @@ $(function() {
             return self.access_password() != self.access_repeatedPassword();
         });
 
-        self.show = function(user) {
+        self.onUserLoggedIn = function(response) {
             if (!CONFIG_ACCESS_CONTROL) return;
 
-            if (user == undefined) {
-                user = self.loginState.currentUser();
-            }
+            self.currentUser(response);
+        };
 
-            self.currentUser(user);
+        self.show = function(user) {
             self.userSettingsDialog.modal("show");
         };
 
