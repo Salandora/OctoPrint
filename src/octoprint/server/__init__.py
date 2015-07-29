@@ -806,6 +806,7 @@ class Server():
 			"js/lib/sockjs-0.3.4.min.js"
 		]
 		js_app = dynamic_assets["js"] + [
+			"js/app/persistentObjectHelper.js",
 			"js/app/dataupdater.js",
 			"js/app/helpers.js",
 			"js/app/main.js",

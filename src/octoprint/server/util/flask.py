@@ -596,7 +596,6 @@ def collect_plugin_assets(enable_gcodeviewer=True, enable_timelapse=True, prefer
 		less=[]
 	)
 	assets["js"] = [
-		'js/app/persistentObjectHelper.js',
 		'js/app/viewmodels/appearance.js',
 		'js/app/viewmodels/connection.js',
 		'js/app/viewmodels/control.js',
